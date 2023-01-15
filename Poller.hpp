@@ -11,6 +11,8 @@ class Poller : public MutexCollector {
         int pollfd;
         std::mutex mutex_handlers;
         std::vector<std::shared_ptr<EventHandler>> descriptorHandlers;
+    protected:
+        void removeHandler(std::vector<std::shared_ptr<EventHandler>>::iterator& handlerIndex);
     public:
         Poller(int pollfd);
         void pollEvents();

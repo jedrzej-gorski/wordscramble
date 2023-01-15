@@ -45,6 +45,10 @@ void Game::finishGame(int playerIndex) {
     players[otherPlayerIndex]->endGame();
 }
 
+void Game::surrenderGame(ClientConnection* player) {
+    finishGame(abs(getPlayerIndex(player) - 1));
+}
+
 void Game::rejectAnswer(int playerIndex) {
     players[playerIndex]->sendMsg(networkingConstants::answerRejected);
 }

@@ -14,6 +14,7 @@ class Game {
         void rejectAnswer(int playerIndex);
         int getPlayerIndex(ClientConnection* player);
     public:
+        void surrenderGame(ClientConnection* player);
         Game(ClientConnection& playerOne, ClientConnection& playerTwo);
         int processAnswer(std::string playerAnswer, ClientConnection* player);
         std::array<char, 16> getCharset(ClientConnection* player);

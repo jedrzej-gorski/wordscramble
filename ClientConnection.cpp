@@ -55,13 +55,17 @@ void ClientConnection::handleReadEvent() {
 void ClientConnection::closeConnection() {
     if (connectedUser->getStatus() != networkingConstants::noUser) {
         if (connectedUser->getStatus() != networkingConstants::inGame) {
-            if (connectedUser->getStatus() != networkingConstants::inQueue) {
-                loginManager->logOut(connectedUser->getUsername(), this);
-                connectedUser.reset();
-                closeable = true;
+            if (connectedUser->getStatus() == networkingConstants::inQueue) {
+                matchQueue->removeFromQueue(this);
             }
         }
+        else {
+            currentGame->surrenderGame(this);
+        }
+        logOut();
     }
+    closeable = true;
+
 }
 
 void ClientConnection::finishLogin(std::string username) {
@@ -70,6 +74,7 @@ void ClientConnection::finishLogin(std::string username) {
 
 void ClientConnection::logOut() {
     loginManager->logOut(connectedUser->getUsername(), this);
+    connectedUser.reset();
 }
 
 void ClientConnection::setStatus(networkingConstants::UserStatus newStatus) {

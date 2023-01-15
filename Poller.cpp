@@ -1,16 +1,23 @@
 #include "Poller.hpp"
 #include "EventHandler.hpp"
+#include "networkingConstants.hpp"
 #include <iterator>
 
 Poller::Poller(int pollfd) : pollfd(pollfd) {
-    // Implement creation of the ServerListener
+    
 }
 
-// TODO: Implement - finish whatever's going on here
 void Poller::pollEvents() {
-    std::lock_guard<std::mutex> collectorLock(mutex_collectors);
-    for (const auto& handlerPtr : descriptorHandlers) {
-        handlerPtr->handleReadEvent();
+    while (true) {
+        epoll_event events[networkingConstants::MAX_EVENTS];
+        std::lock_guard<std::mutex> collectorLock(mutex_collectors);
+        int nfds = epoll_wait(pollfd, static_cast<epoll_event*>(events), networkingConstants::MAX_EVENTS, 0);
+        if (nfds < 0) {
+            return;
+        }
+        for (int i = 0; i < nfds; i++) {
+            static_cast<EventHandler*>(events[i].data.ptr)->handleReadEvent();
+        }
     }
 }
 
@@ -25,6 +32,10 @@ void Poller::addHandler(epoll_event& handledEvent) {
     descriptorHandlers.push_back(std::move(newPointer));
 }
 
+void Poller::removeHandler(std::vector<std::shared_ptr<EventHandler>>::iterator& it) {
+    epoll_ctl(pollfd, EPOLL_CTL_DEL, (*it)->getSocketfd(), nullptr);
+}
+
 void Poller::checkForCloseable() {
     std::lock_guard<std::mutex> collectorLock(mutex_collectors);
     std::lock_guard<std::mutex> lock(mutex_handlers);
@@ -32,6 +43,7 @@ void Poller::checkForCloseable() {
     // Iterate over all active descriptors and erase the pointers to those, which are closeable
     while (it != descriptorHandlers.end()) {
         if ((*it)->isCloseable()) {
+            removeHandler(it);
             descriptorHandlers.erase(it);
         }
         else {
