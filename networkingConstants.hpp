@@ -2,6 +2,7 @@ namespace networkingConstants {
     const int MAX_MSG_SIZE = 1024;
     const int MAX_ROUND = 5;
     const int MAX_EVENTS = 10;
+    const int LOCALPORT = 5050;
 
     enum ClientInstructionType {
         logIn = 1,

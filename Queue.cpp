@@ -3,7 +3,6 @@
 
 
 void Queue::addToQueue(ClientConnection* newUser) {
-    std::lock_guard<std::mutex> lock(queuedUsersMutex);
     if (std::find(queuedUsers.begin(), queuedUsers.end(), newUser) != queuedUsers.end()) {
         newUser->sendMsg(networkingConstants::addedToQueue, networkingConstants::genericFailure);
     }
@@ -13,7 +12,6 @@ void Queue::addToQueue(ClientConnection* newUser) {
 }
 
 void Queue::removeFromQueue(ClientConnection* removedUser) {
-    std::lock_guard<std::mutex> lock(queuedUsersMutex);
     //If the user has already been matchmade, the function won't do anything
     bool removed = false;
     for (auto it = queuedUsers.begin(); it != queuedUsers.end(); ++it) {
@@ -33,11 +31,11 @@ void Queue::removeFromQueue(ClientConnection* removedUser) {
 }
 
 void Queue::matchmake() {
-    std::lock_guard<std::mutex> collectorLock(mutex_collectors);
+    
     // Matchmaking needs to happen constantly, hence the loop
     while (true) {
+        std::lock_guard<std::mutex> collectorLock(mutex_collectors);
         ClientConnection *playerOne, *playerTwo;
-        std::lock_guard<std::mutex> lock(queuedUsersMutex);
         if (queuedUsers.size() > 1) {
             playerOne = queuedUsers[0];
             playerTwo = queuedUsers[1];

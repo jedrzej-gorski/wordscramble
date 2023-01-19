@@ -6,9 +6,7 @@
 
 class ServerListener: public EventHandler {
     private:
-        int localport;
-
     public:
-        ServerListener(int socketfd, sockaddr_in socketData, int localport, std::shared_ptr<Poller>& descriptorPoller, std::shared_ptr<Queue>& matchQueue, std::shared_ptr<UserManager>& loginManager);
+        ServerListener(int socketfd, sockaddr_in socketData, std::shared_ptr<Poller>& descriptorPoller, std::shared_ptr<Queue>& matchQueue, std::shared_ptr<UserManager>& loginManager);
         void handleReadEvent();
 };

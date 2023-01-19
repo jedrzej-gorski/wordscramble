@@ -7,7 +7,6 @@
 class Queue: public MutexCollector{
     private:
         std::vector<ClientConnection*> queuedUsers;
-        std::mutex queuedUsersMutex;
     public:
         void addToQueue(ClientConnection* newUser);
         void removeFromQueue(ClientConnection* removedUser);

@@ -9,7 +9,6 @@ class Server {
         std::shared_ptr<UserManager> loginManager;
         std::shared_ptr<Poller> descriptorPoller;
     public:
-        Server()
-        
-
+        Server();
+        void run();
 };

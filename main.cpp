@@ -2,5 +2,6 @@
 #include "Poller.hpp"
 
 int main() {
-
+    Server serverInstance;
+    serverInstance.run();
 }
