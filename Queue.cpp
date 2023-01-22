@@ -1,5 +1,8 @@
-#include <Queue.hpp>
+#include "Queue.hpp"
+#include "ClientConnection.hpp"
 #include <algorithm>
+#include <chrono>
+#include <thread>
 
 
 void Queue::addToQueue(ClientConnection* newUser) {
@@ -34,7 +37,9 @@ void Queue::matchmake() {
     
     // Matchmaking needs to happen constantly, hence the loop
     while (true) {
-        std::lock_guard<std::mutex> collectorLock(mutex_collectors);
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(10ms);
+        std::lock_guard<std::mutex> collectorLock(MutexCollector::mutex_collectors);
         ClientConnection *playerOne, *playerTwo;
         if (queuedUsers.size() > 1) {
             playerOne = queuedUsers[0];

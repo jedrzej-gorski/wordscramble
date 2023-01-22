@@ -1,4 +1,5 @@
 #include "UserManager.hpp"
+#include "ClientConnection.hpp"
 #include <fstream>
 #include <iterator>
 

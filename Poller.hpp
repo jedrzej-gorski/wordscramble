@@ -1,10 +1,14 @@
 #pragma once
-#include "EventHandler.hpp"
+#include "MutexCollector.hpp"
+#include "UserManager.hpp"
+#include "Queue.hpp"
 #include <vector>
 #include <memory>
-#include <MutexCollector.hpp>
 #include <sys/epoll.h>
 #include <mutex>
+
+class EventHandler;
+
 
 class Poller : public MutexCollector {
     private:

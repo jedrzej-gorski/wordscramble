@@ -50,5 +50,7 @@
         "streambuf": "cpp",
         "thread": "cpp",
         "typeinfo": "cpp"
-    }
+    },
+    "cmake.configureOnOpen": true,
+    "cmake.sourceDirectory": "/root/haha/wordServer"
 }

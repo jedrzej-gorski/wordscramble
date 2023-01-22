@@ -1,3 +1,5 @@
+#pragma once
+
 namespace networkingConstants {
     const int MAX_MSG_SIZE = 1024;
     const int MAX_ROUND = 5;

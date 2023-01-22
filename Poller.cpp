@@ -2,6 +2,8 @@
 #include "EventHandler.hpp"
 #include "ServerListener.hpp"
 #include "networkingConstants.hpp"
+#include <thread>
+#include <chrono>
 #include <iterator>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -36,19 +38,21 @@ void Poller::initializeServer(std::shared_ptr<UserManager>& loginManager, std::s
         error(1, errno, "listen failed");
     }
 
-
-    descriptorHandlers.emplace_back(std::make_shared<ServerListener>(servFd, serverAddr, this, matchQueue, loginManager));
+    std::shared_ptr<Poller> thisPointer(this);
+    descriptorHandlers.emplace_back(std::make_shared<ServerListener>(servFd, serverAddr, thisPointer, matchQueue, loginManager));
 
     epoll_event server_event;
     server_event.events = EPOLLIN;
-    server_event.data.ptr = static_cast<void*>((*descriptorHandlers.end()).get());
+    server_event.data.ptr = static_cast<void*>((*(descriptorHandlers.begin())).get());
     addHandler(server_event);
 }
 
 void Poller::pollEvents() {
     while (true) {
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(10ms);
         epoll_event events[networkingConstants::MAX_EVENTS];
-        std::lock_guard<std::mutex> collectorLock(mutex_collectors);
+        std::lock_guard<std::mutex> collectorLock(MutexCollector::mutex_collectors);
         int nfds = epoll_wait(pollfd, static_cast<epoll_event*>(events), networkingConstants::MAX_EVENTS, 0);
         if (nfds < 0) {
             continue;
@@ -80,7 +84,9 @@ void Poller::removeHandler(std::vector<std::shared_ptr<EventHandler>>::iterator&
 
 void Poller::checkForCloseable() {
     while (true) {
-        std::lock_guard<std::mutex> collectorLock(mutex_collectors);
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(10ms);
+        std::lock_guard<std::mutex> collectorLock(MutexCollector::mutex_collectors);
         std::lock_guard<std::mutex> lock(mutex_handlers);
         auto it = descriptorHandlers.begin();
         // Iterate over all active descriptors and erase the pointers to those, which are closeable

@@ -12,12 +12,14 @@ void ClientConnection::handleReadEvent() {
     uint16_t msgSize;
 
     if (recv(socketfd, &msgSize, 2, MSG_WAITALL) != 2) {
-        // TODO: Error handling for disconnection
+        closeConnection();
+        return;
     }
     msgSize = ntohs(msgSize);
 
     if (recv(socketfd, buffer, msgSize, MSG_WAITALL) != msgSize) {
-        // TODO: Error handling for disconnection.
+        closeConnection();
+        return;
     }
     sscanf(buffer, "%d %s", &command, &arguments);
     std::istringstream ss(arguments);

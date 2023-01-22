@@ -10,9 +10,9 @@ Server::Server() {
 
 void Server::run() {
     descriptorPoller->initializeServer(loginManager, matchQueue);
-    std::thread closeThread(Poller::checkForCloseable, descriptorPoller);
-    std::thread pollThread(Poller::pollEvents, descriptorPoller);
-    std::thread matchmakeThread(Queue::matchmake, matchQueue);
+    std::thread closeThread(&Poller::checkForCloseable, descriptorPoller);
+    std::thread pollThread(&Poller::pollEvents, descriptorPoller);
+    std::thread matchmakeThread(&Queue::matchmake, matchQueue);
     closeThread.join();
     pollThread.join();
     matchmakeThread.join();

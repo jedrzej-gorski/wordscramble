@@ -1,9 +1,15 @@
 #pragma once
 #include "EventHandler.hpp"
 #include "Poller.hpp"
+#include "UserManager.hpp"
+#include "Queue.hpp"
 #include "User.hpp"
 #include "Game.hpp"
 #include <memory>
+#include <fmt/format.h>
+#include <sstream>
+#include <cstring>
+
 
 class ClientConnection : public EventHandler {
     private:
@@ -17,19 +23,24 @@ class ClientConnection : public EventHandler {
         void endGame();
         template<typename... Args>
         void sendMsg(networkingConstants::ServerInstructionType msgToSend, Args... args) {
-            char buffer[networkingConstants:MAX_MSG_SIZE];
+            char buffer[networkingConstants::MAX_MSG_SIZE];
             uint16_t msgSize = 0;
+            std::stringstream ss;
             // Prepare format string for fold expression, the last set of braces mustn't be followed by a space, hence the pop_back after the termination
-            for (int i = 0; i < static_cast<int>(sizeof...(Args)); i++) {
+            /*for (int i = 0; i < static_cast<int>(sizeof...(Args)); i++) {
                 formatString += "{} ";
             }
-            formatString.pop_back();
+            formatString.pop_back();*/
 
-            msgSize = sprintf(buffer + 2, std::format(formatString, msgToSend, args...).c_str());
-            *(u_int16_t*)buffer = htons(msgSize);
+            ss << msgToSend;
+            ((ss << args << " "), ...);
+            msgSize = ss.str().length();
+            std::strcpy(buffer + 2, ss.str().c_str());
+            *(u_int16_t*)buffer = htons(msgSize); 
  
-            if (msgSize + 2 != send(socketfd, static_cast<void*>(buffer), msgSize + 2)) {
-                // TODO: Error handling for disconnection
+            if (msgSize + 2 != send(socketfd, static_cast<void*>(buffer), msgSize + 2, 0)) {
+                closeConnection();
+                return;
             }
         };
         void setStatus(networkingConstants::UserStatus newStatus);

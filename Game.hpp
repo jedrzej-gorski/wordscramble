@@ -1,6 +1,8 @@
 #pragma once
 #include <array>
-#include "ClientConnection.hpp"
+#include <string>
+
+class ClientConnection;
 
 class Game {
     private:
@@ -13,11 +15,12 @@ class Game {
         void finishGame(int winnerIndex);
         void rejectAnswer(int playerIndex);
         int getPlayerIndex(ClientConnection* player);
+        std::string castCharset(std::array<char, 16> charset);
     public:
         void surrenderGame(ClientConnection* player);
-        Game(ClientConnection& playerOne, ClientConnection& playerTwo);
+        Game(ClientConnection* playerOne, ClientConnection* playerTwo);
         int processAnswer(std::string playerAnswer, ClientConnection* player);
-        std::array<char, 16> getCharset(ClientConnection* player);
+        std::string getCharset(ClientConnection* player);
         std::string getOtherPlayerName(ClientConnection* player);
 
 };

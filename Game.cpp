@@ -1,8 +1,9 @@
 #include "Game.hpp"
+#include "ClientConnection.hpp"
 #include "wordProcessing.hpp"
 #include <math.h>
 
-Game::Game(ClientConnection& playerOne, ClientConnection& playerTwo) : players({&playerOne, &playerTwo}), roundNumbers({1, 1}) {
+Game::Game(ClientConnection* playerOne, ClientConnection* playerTwo) : players({playerOne, playerTwo}), roundNumbers({1, 1}) {
     // TODO: Resarch - how do you work with templates?
     for (int i = 0; i < charsets.size(); i++) {
         charsets[i] = wordProcessing::generateCharset();
@@ -77,5 +78,22 @@ std::string Game::getOtherPlayerName(ClientConnection* player) {
     }
     else if (players[1] == player) {
         return players[0]->getConnectedUsername();
+    }
+}
+
+std::string Game::castCharset(std::array<char, 16> charset) {
+    std::string result = "";
+    for (auto it = charset.begin(); it != charset.end(); std::advance(it, 1)) {
+        result += *it;
+    }
+    return result;
+}
+
+std::string Game::getCharset(ClientConnection* player) {
+    if (players[0] == player) {
+        return static_cast<std::string>(castCharset(charsets[0]));
+    }
+    else if (players[1] == player) {
+        return static_cast<std::string>(castCharset(charsets[1]));
     }
 }

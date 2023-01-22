@@ -1,7 +1,8 @@
 #pragma once
 #include <map>
-#include "ClientConnection.hpp"
 #include <mutex>
+
+class ClientConnection;
 
 class UserManager {
     private:
