@@ -6,7 +6,6 @@
 #include "User.hpp"
 #include "Game.hpp"
 #include <memory>
-#include <fmt/format.h>
 #include <sstream>
 #include <cstring>
 
