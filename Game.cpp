@@ -33,7 +33,7 @@ void Game::advancePlayer(int playerIndex) {
     else {
         int otherPlayerIndex = abs(playerIndex - 1);
 
-        players[playerIndex]->sendMsg(networkingConstants::playerAdvancedRound);
+        players[playerIndex]->sendMsg(networkingConstants::playerAdvancedRound, castCharset(charsets[roundNumbers[playerIndex]]));
         players[otherPlayerIndex]->sendMsg(networkingConstants::enemyAdvancedRound);
     }
 }

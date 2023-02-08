@@ -40,7 +40,7 @@
   * ARGUMENTS: gameOverParams
 
 * TYPE: playerAdvancedRound
-  * ARGUMENTS: 
+  * ARGUMENTS: NEXT_CHARSET
 
 * TYPE: enemyAdvancedRound
   * ARGUMENTS: 
