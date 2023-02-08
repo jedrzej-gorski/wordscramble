@@ -25,12 +25,8 @@ class ClientConnection : public EventHandler {
             char buffer[networkingConstants::MAX_MSG_SIZE];
             uint16_t msgSize = 0;
             std::stringstream ss;
-            // Prepare format string for fold expression, the last set of braces mustn't be followed by a space, hence the pop_back after the termination
-            /*for (int i = 0; i < static_cast<int>(sizeof...(Args)); i++) {
-                formatString += "{} ";
-            }
-            formatString.pop_back();*/
 
+            // Use a stream to compose the message
             ss << msgToSend;
             ((ss << args << " "), ...);
             msgSize = ss.str().length();
