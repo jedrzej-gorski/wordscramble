@@ -55,7 +55,7 @@ void ClientConnection::handleReadEvent() {
 }
 
 void ClientConnection::closeConnection() {
-    if (connectedUser->getStatus() != networkingConstants::noUser) {
+    if (connectedUser.get() != nullptr) {
         if (connectedUser->getStatus() != networkingConstants::inGame) {
             if (connectedUser->getStatus() == networkingConstants::inQueue) {
                 matchQueue->removeFromQueue(this);

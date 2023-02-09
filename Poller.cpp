@@ -39,11 +39,11 @@ void Poller::initializeServer(std::shared_ptr<UserManager>& loginManager, std::s
     }
 
     std::shared_ptr<Poller> thisPointer(this);
-    descriptorHandlers.emplace_back(std::make_shared<ServerListener>(servFd, serverAddr, thisPointer, matchQueue, loginManager));
 
+    auto listener = new ServerListener(servFd, serverAddr, thisPointer, matchQueue, loginManager);
     epoll_event server_event;
     server_event.events = EPOLLIN;
-    server_event.data.ptr = static_cast<void*>((*(descriptorHandlers.begin())).get());
+    server_event.data.ptr = static_cast<void*>(listener);
     addHandler(server_event);
 }
 

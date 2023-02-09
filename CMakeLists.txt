@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.0.0)
-project(word VERSION 0.1.0)
+project(skserver VERSION 0.1.0)
 
 include(CTest)
 enable_testing()
 
-add_executable(word main.cpp
+add_executable(skserver main.cpp
                     ClientConnection.hpp
                     ClientConnection.cpp
                     EventHandler.hpp
