@@ -6,8 +6,7 @@ ClientConnection::ClientConnection(int socketfd, sockaddr_in addressData, std::s
 
 void ClientConnection::handleReadEvent() {
     char buffer[networkingConstants::MAX_MSG_SIZE];
-    std::string arguments;
-    networkingConstants::ClientInstructionType command;
+    int command;
     // incoming message size
     uint16_t msgSize;
 
@@ -21,12 +20,13 @@ void ClientConnection::handleReadEvent() {
         closeConnection();
         return;
     }
-    sscanf(buffer, "%d %s", &command, &arguments);
-    std::istringstream ss(arguments);
+    //sscanf(buffer, "%d %s", &command, &arguments);
+    std::istringstream ss(buffer);
     std::string newArgument;
     std::vector<std::string> argumentList;
-    while (getline(ss, newArgument, ' ')) {
-        argumentList.push_back(std::move(newArgument));
+    ss >> command;
+    while (ss >> newArgument) {
+        argumentList.push_back(newArgument);
     }
     
     switch (command) {

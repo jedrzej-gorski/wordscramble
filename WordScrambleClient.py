@@ -33,7 +33,7 @@ def close_app(instance):
 
 def rec_message_size(soc):
     message_size = soc.recv(2)
-    message_size = struct.unpack("!H", message_size)[0]
+    message_size = struct.unpack("H", message_size)[0]
     message_size = socket.ntohs(message_size)
     return message_size
 
@@ -53,7 +53,7 @@ def send_message(soc, msg):
 
     msg = msg.encode()
     msg_size = len(msg)
-    msg_size = struct.pack("!H", socket.htons(msg_size))
+    msg_size = struct.pack("H", socket.htons(msg_size))
     soc.send(msg_size)
     # soc.sendall(msg)
     # sck.sendall(packed_msg_size + msg)

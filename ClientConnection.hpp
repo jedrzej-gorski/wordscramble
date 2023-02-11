@@ -27,8 +27,12 @@ class ClientConnection : public EventHandler {
             std::stringstream ss;
 
             // Use a stream to compose the message
-            ss << msgToSend;
+            ss << msgToSend << " ";
             ((ss << args << " "), ...);
+            // Convert the last whitespace into a terminator
+            ss.seekp(-1, ss.cur);
+            ss << '\0';
+
             msgSize = ss.str().length();
             std::strcpy(buffer + 2, ss.str().c_str());
             *(u_int16_t*)buffer = htons(msgSize); 
