@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import socket
+import select
 import struct
 from kivy.app import App
 from kivy.uix.button import Button
@@ -16,7 +17,7 @@ port_number = 5050
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((host_name, port_number))
-sock.settimeout(5)
+sock.settimeout(3)
 
 playerName = ''
 initialGameState = "X Y Z"
@@ -46,11 +47,15 @@ def rec_message(soc):
         if not buf:
             break
         message += buf
-    return message.decode()
+    # Message should be split into type (head) and arguments (tail)
+    split_message = message.decode().split()
+    if len(split_message) > 1:
+        return split_message[0], split_message[1:]
+    else:
+        return split_message[0], []
 
 
 def send_message(soc, msg):
-
     msg = msg.encode()
     msg_size = len(msg)
     msg_size = struct.pack("H", socket.htons(msg_size))
@@ -61,7 +66,6 @@ def send_message(soc, msg):
     while sent < len(msg):
         buf = min(1024, len(msg) - sent)
         sent += soc.send(msg[sent:sent+buf])
-
 
 class LoginScreen(Screen):
     def __init__(self, **kwargs):
@@ -100,6 +104,9 @@ class LoginScreen(Screen):
 
         self.add_widget(self.layout)
 
+    def on_enter(self):
+        sock.settimeout(3)
+
     def log_in(self, instance):
         # called by a Button press
 
@@ -109,64 +116,68 @@ class LoginScreen(Screen):
 
         # wait for response
         try:
-            answer = rec_message(sock)
-
+            type, answer = rec_message(sock)
         except Exception as e:
             print(str(e))
         else:
-            if answer == str(NetworkingConstants.LogInResultType.failureUser.value):
-                self.message_label.text = 'Incorrect username'
-            elif answer == str(NetworkingConstants.LogInResultType.failureLoggedIn.value):
-                self.message_label.text = 'User already logged in'
-            elif answer == str(NetworkingConstants.LogInResultType.failurePassword.value):
-                self.message_label.text = 'Incorrect password'
-            elif answer == str(NetworkingConstants.LogInResultType.success.value) + " " + self.username_input.text:
-                self.message_label.text = 'Logged in'
-                global playerName
-                playerName = self.username_input.text
-                self.queue_button.disabled = False
-                self.login_button.disabled = True
-                self.logout_button.disabled = False
+            if type == str(NetworkingConstants.ServerInstructionType.logInResult.value):
+                if answer[0] == str(NetworkingConstants.LogInResultType.failureUser.value):
+                    self.message_label.text = 'Incorrect username'
+                elif answer[0] == str(NetworkingConstants.LogInResultType.failureLoggedIn.value):
+                    self.message_label.text = 'User already logged in'
+                elif answer[0] == str(NetworkingConstants.LogInResultType.failurePassword.value):
+                    self.message_label.text = 'Incorrect password'
+                elif answer[0] == str(NetworkingConstants.LogInResultType.success.value) and answer[1] == self.username_input.text:
+                    self.message_label.text = 'Logged in'
+                    global playerName
+                    playerName = self.username_input.text
+                    self.queue_button.disabled = False
+                    self.login_button.disabled = True
+                    self.logout_button.disabled = False
+
 
     def queue_for_game(self, instance):
         # called on login
 
-        message = str(NetworkingConstants.ClientInstructionType.logOut.queueForGame)
-        sock.sendall(message.encode())
+        message = str(NetworkingConstants.ClientInstructionType.logOut.queueForGame.value)
+        send_message(sock, message)
         try:
-            answer = str(sock.recv(1024).decode())
+            type, answer = rec_message(sock)
         except TimeoutError:
             print("Timeout")
         else:
-            if answer == str(NetworkingConstants.ServerInstructionType.addedToQueue) + " " + str(NetworkingConstants.GenericResponseType.genericFailure.value):
-                print("Error while joining queue")
-            elif answer == str(NetworkingConstants.ServerInstructionType.addedToQueue) + " " + str(NetworkingConstants.GenericResponseType.genericSuccess.value):
-                self.manager.current = 'queue'
-            else:
-                # space for potential future error handling
-                pass
+            if type == str(NetworkingConstants.ServerInstructionType.addedToQueue.value):
+                if answer[0] == str(NetworkingConstants.GenericResponseType.genericFailure.value):
+                    print("Error while joining queue")
+                elif answer[0] == str(NetworkingConstants.GenericResponseType.genericSuccess.value):
+                    self.manager.current = 'queue'
+                else:
+                    # space for potential future error handling
+                    pass
 
     def log_out(self, instance):
         message = str(NetworkingConstants.ClientInstructionType.logOut.value)
-        sock.sendall(message.encode())
+        send_message(sock, message)
         try:
-            answer = str(sock.recv(1024).decode())
+            type, answer = rec_message(sock)
         except TimeoutError:
             print("Timeout")
         else:
-            if answer == str(NetworkingConstants.LogOutResultType.logOutSuccess.value):
-                global playerName
-                playerName = ''
-                self.manager.current = 'login'
-                self.login_button.disabled = False
-                self.logout_button.disabled = True
-            elif answer == str(NetworkingConstants.LogOutResultType.logOutFailureUser.value):
-                print("Error while logging out")
-            elif answer == str(NetworkingConstants.LogOutResultType.logOutFailureLoggedOut.value):
-                print("Error while logging out (already logged out)")
-            else:
-                # space for potential future error handling
-                pass
+            if type == str(NetworkingConstants.ServerInstructionType.logOutResult.value):
+                if answer[0] == str(NetworkingConstants.LogOutResultType.logOutSuccess.value):
+                    global playerName
+                    playerName = ''
+                    self.manager.current = 'login'
+                    self.login_button.disabled = False
+                    self.logout_button.disabled = True
+                    self.queue_button.disabled = True
+                elif answer[0] == str(NetworkingConstants.LogOutResultType.logOutFailureUser.value):
+                    print("Error while logging out")
+                elif answer[0] == str(NetworkingConstants.LogOutResultType.logOutFailureLoggedOut.value):
+                    print("Error while logging out (already logged out)")
+                else:
+                    # space for potential future error handling
+                    pass
 
 
 class QueueScreen(Screen):
@@ -185,32 +196,36 @@ class QueueScreen(Screen):
 
     def on_enter(self):
         Clock.schedule_once(self.check_answer, 1)
+        sock.settimeout(0.25)
 
     def check_answer(self, dt):
 
         try:
-            answer = str(sock.recv(1024).decode())
+            type, answer = rec_message(sock)
         except TimeoutError:
             print("Timeout")
+            Clock.schedule_once(self.check_answer, 1)
         else:
-            if answer.startswith(str(NetworkingConstants.ServerInstructionType.gameReady.value)):
+            if type == str(NetworkingConstants.ServerInstructionType.gameReady.value):
                 global initialGameState
-                initialGameState = answer
+                global playerName
+                initialGameState =  "{0} {1} {2}".format(playerName, answer[0], answer[1])
                 self.manager.current = 'lobby'
-            elif answer == str(NetworkingConstants.ServerInstructionType.removedFromQueue.value) + " " +  str(NetworkingConstants.GenericResponseType.genericSuccess.value):
+            elif type == str(NetworkingConstants.ServerInstructionType.removedFromQueue.value) and answer[0] == str(NetworkingConstants.GenericResponseType.genericSuccess.value):
                 self.manager.current = 'login'
             else:
                 Clock.schedule_once(self.check_answer, 1)
 
     def leave_queue(self, instance):
+        Clock.unschedule(self.check_answer)
         message = str(NetworkingConstants.ClientInstructionType.leaveQueue.value)
-        sock.sendall(message.encode())
+        send_message(sock, message)
         try:
-            answer = str(sock.recv(1024).decode())
+            type, answer = rec_message(sock)
         except TimeoutError:
             print("Timeout")
         else:
-            if answer == str(NetworkingConstants.ServerInstructionType.removedFromQueue.value) + " " + str(NetworkingConstants.GenericResponseType.genericSuccess.value):
+            if type == str(NetworkingConstants.ServerInstructionType.removedFromQueue.value) and answer[0] == str(NetworkingConstants.GenericResponseType.genericSuccess.value):
                 self.manager.current = 'login'
 
 
@@ -230,50 +245,59 @@ class LobbyScreen(Screen):
         self.layout.add_widget(self.match_label)
 
         self.letters_label = Label(text=initialGameState.split()[2])
+        self.result_label = Label(text='')
         self.word_input = TextInput(text='')
         self.word_button = Button(text='Send Word')
         self.word_button.bind(on_press=self.send_word)
         self.layout.add_widget(self.letters_label)
+        self.layout.add_widget(self.result_label)
         self.layout.add_widget(self.word_input)
         self.layout.add_widget(self.word_button)
 
         self.add_widget(self.layout)
 
     def on_enter(self):
+        enemy_name = initialGameState.split()[1]
+
+        self.match_label.text = "{0} vs {1}".format(playerName, enemy_name)
+
+        self.letters_label.text = initialGameState.split()[2]
         Clock.schedule_once(self.check_answer, 1)
 
     def check_answer(self, dt):
         global mainScreenMessage
         try:
-            answer = str(sock.recv(1024).decode())
+            type, answer = rec_message(sock)
         except TimeoutError:
             print("Timeout")
+            Clock.schedule_once(self.check_answer, 1)
         else:
-            if answer == str(NetworkingConstants.ServerInstructionType.gameOver.value) + " " + str(NetworkingConstants.GameOverParams.gameWon.value):
+            if type == str(NetworkingConstants.ServerInstructionType.gameOver.value) and answer[0] == str(NetworkingConstants.GameOverParams.gameWon.value):
                 mainScreenMessage = 'You Won!'
-                self.message_label.text = mainScreenMessage
+                self.result_label.text = mainScreenMessage
                 self.manager.current = 'login'
-            elif answer == str(NetworkingConstants.ServerInstructionType.gameOver.value) + " " + str(NetworkingConstants.GameOverParams.gameLost.value):
+            elif type == str(NetworkingConstants.ServerInstructionType.gameOver.value) and answer[0] == str(NetworkingConstants.GameOverParams.gameLost.value):
                 mainScreenMessage = 'Enemy Won!'
-                self.message_label.text = mainScreenMessage
+                self.result_label.text = mainScreenMessage
                 self.manager.current = 'login'
-            elif answer.startswith(str(NetworkingConstants.ServerInstructionType.playerAdvancedRound)):
-                self.message_label.text = 'You scored!'
-                self.letters_label = answer.split(str(NetworkingConstants.ServerInstructionType.playerAdvancedRound), 1)[-1]
+            elif type == str(NetworkingConstants.ServerInstructionType.playerAdvancedRound.value):
+                self.result_label.text = 'You scored!'
+                self.letters_label.text = answer[0]
                 Clock.schedule_once(self.check_answer, 1)
-            elif answer.startswith(str(NetworkingConstants.ServerInstructionType.enemyAdvancedRound)):
-                self.message_label.text = 'Enemy scored!'
-                self.letters_label = answer.split(str(NetworkingConstants.ServerInstructionType.enemyAdvancedRound), 1)[-1]
+            elif type == str(NetworkingConstants.ServerInstructionType.enemyAdvancedRound.value):
+                self.result_label.text = 'Enemy scored!'
+                # Not sure why this is here
+                # self.letters_label = answer.split(str(NetworkingConstants.ServerInstructionType.enemyAdvancedRound), 1)[-1]
                 Clock.schedule_once(self.check_answer, 1)
-            elif answer == str(NetworkingConstants.ServerInstructionType.answerRejected):
-                self.message_label.text = 'Incorrect answer!'
+            elif type == str(NetworkingConstants.ServerInstructionType.answerRejected.value):
+                self.result_label.text = 'Incorrect answer!'
                 Clock.schedule_once(self.check_answer, 1)
             else:
                 Clock.schedule_once(self.check_answer, 1)
 
     def send_word(self, instance):
         message = str(NetworkingConstants.ClientInstructionType.sendWord.value) + " " + self.word_input.text
-        sock.sendall(message.encode())
+        send_message(sock, message)
 
 
 class WordScrambleClient(App):

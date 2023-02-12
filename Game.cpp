@@ -4,7 +4,6 @@
 #include <math.h>
 
 Game::Game(ClientConnection* playerOne, ClientConnection* playerTwo) : players({playerOne, playerTwo}), roundNumbers({1, 1}) {
-    // TODO: Resarch - how do you work with templates?
     for (int i = 0; i < charsets.size(); i++) {
         charsets[i] = wordProcessing::generateCharset();
     }
@@ -33,7 +32,7 @@ void Game::advancePlayer(int playerIndex) {
     else {
         int otherPlayerIndex = abs(playerIndex - 1);
 
-        players[playerIndex]->sendMsg(networkingConstants::playerAdvancedRound, castCharset(charsets[roundNumbers[playerIndex]]));
+        players[playerIndex]->sendMsg(networkingConstants::playerAdvancedRound, castCharset(charsets[roundNumbers[playerIndex] - 1]));
         players[otherPlayerIndex]->sendMsg(networkingConstants::enemyAdvancedRound);
     }
 }
@@ -61,8 +60,8 @@ int Game::processAnswer(std::string playerAnswer, ClientConnection* player) {
         return 0;
     }
     // Pass in the charset corresponding to the player's current round
-    if (wordProcessing::validateAnswer(charsets[static_cast<int>(roundNumbers[playerIndex])], playerAnswer)) {
-        playerAnswers[roundNumbers[playerIndex]][playerIndex] = playerAnswer;
+    if (wordProcessing::validateAnswer(charsets[static_cast<int>(roundNumbers[playerIndex] - 1)], playerAnswer)) {
+        playerAnswers[roundNumbers[playerIndex] - 1][playerIndex] = playerAnswer;
         advancePlayer(playerIndex);
     }
     else {
@@ -83,17 +82,12 @@ std::string Game::getOtherPlayerName(ClientConnection* player) {
 
 std::string Game::castCharset(std::array<char, 16> charset) {
     std::string result = "";
-    for (auto it = charset.begin(); it != charset.end(); std::advance(it, 1)) {
+    for (auto it = charset.begin(); it != charset.end(); ++it) {
         result += *it;
     }
     return result;
 }
 
 std::string Game::getCharset(ClientConnection* player) {
-    if (players[0] == player) {
-        return static_cast<std::string>(castCharset(charsets[0]));
-    }
-    else if (players[1] == player) {
-        return static_cast<std::string>(castCharset(charsets[1]));
-    }
+    return castCharset(charsets[0]);
 }

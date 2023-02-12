@@ -12,12 +12,12 @@ namespace wordProcessing {
     namespace {
         // Private section dedicated to verification and file reading
         std::array<char, 6> vowels = {'a', 'e', 'i', 'o', 'u', 'y'};
-        std::array<char, 21> consonants = {'b', 'c', 'd', 'f', 'g', 'h', 'j', 'k',
+        std::array<char, 19> consonants = {'b', 'c', 'd', 'f', 'g', 'h', 'j', 'k',
                                            'm', 'n', 'p', 'q', 'r', 's', 't', 'v',
                                            'w', 'x', 'z'};
-        std::ifstream wordListStream("res/wordList.txt");
         std::vector<std::string> getContents() {
             std::string newWord;
+            std::ifstream wordListStream("res/wordList.txt");
             std::vector<std::string> contents;
             while (wordListStream >> newWord) {
                 contents.push_back(newWord);
@@ -73,7 +73,6 @@ namespace wordProcessing {
     }
 
     std::array<char, 16> generateCharset() {
-        srand(time(NULL));
         bool isValid = false;
         std::array<char, 16> resultCharset;
         std::vector<char> combinedCharacters;

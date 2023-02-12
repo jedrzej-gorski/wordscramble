@@ -15,7 +15,7 @@ UserManager::UserManager() {
 
 void UserManager::validateLogin(std::string username, std::string password, ClientConnection* connection) {
     if (userCredentials.find(username) != userCredentials.end()) {
-        // Lock the ability to process this user's login simultaneously different connections
+        // Lock the ability to process this user's login simultaneously in different connections
         std::lock_guard<std::mutex> lock(userMutexes[username]);
         if (isUserLoggedIn[username] == false) {
             if (userCredentials[username] == password) {
@@ -48,5 +48,8 @@ void UserManager::logOut(std::string username, ClientConnection* connection) {
             connection->sendMsg(networkingConstants::logOutResult, networkingConstants::logOutFailureLoggedOut);
         }
     }
-    connection->sendMsg(networkingConstants::logOutResult, networkingConstants::logOutFailureUser);
+    else {
+        connection->sendMsg(networkingConstants::logOutResult, networkingConstants::logOutFailureUser);
+    }
+    
 }

@@ -42,20 +42,20 @@ namespace networkingConstants {
     };
 
     enum LogInResultType {
-        success,
+        success = 1,
         failurePassword,
         failureUser,
         failureLoggedIn
     };
 
     enum LogOutResultType {
-        logOutSuccess,
+        logOutSuccess = 1,
         logOutFailureLoggedOut,
         logOutFailureUser
     };
 
     enum GenericResponseType {
-        genericSuccess,
+        genericSuccess = 1,
         genericFailure
     };
 }

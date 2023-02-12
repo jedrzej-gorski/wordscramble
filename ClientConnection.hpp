@@ -25,19 +25,21 @@ class ClientConnection : public EventHandler {
             char buffer[networkingConstants::MAX_MSG_SIZE];
             uint16_t msgSize = 0;
             std::stringstream ss;
+            std::string message;
 
             // Use a stream to compose the message
             ss << msgToSend << " ";
             ((ss << args << " "), ...);
-            // Convert the last whitespace into a terminator
-            ss.seekp(-1, ss.cur);
-            ss << '\0';
 
-            msgSize = ss.str().length();
-            std::strcpy(buffer + 2, ss.str().c_str());
+
+            // Remove the last space
+            message = std::move(ss.str());
+            message.pop_back();
+            msgSize = message.length();
+            std::strcpy(buffer + 2, message.c_str());
             *(u_int16_t*)buffer = htons(msgSize); 
  
-            if (msgSize + 2 != send(socketfd, static_cast<void*>(buffer), msgSize + 2, 0)) {
+            if (msgSize + 2 != send(socketfd, static_cast<void*>(buffer), msgSize + 2, MSG_NOSIGNAL)) {
                 closeConnection();
                 return;
             }

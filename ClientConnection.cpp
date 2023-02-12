@@ -20,7 +20,9 @@ void ClientConnection::handleReadEvent() {
         closeConnection();
         return;
     }
-    //sscanf(buffer, "%d %s", &command, &arguments);
+    // Terminate the C string
+    buffer[msgSize] = '\0';
+
     std::istringstream ss(buffer);
     std::string newArgument;
     std::vector<std::string> argumentList;
@@ -34,7 +36,7 @@ void ClientConnection::handleReadEvent() {
                 loginManager->validateLogin(argumentList[0], argumentList[1], this);
             break;
         case networkingConstants::logOut:
-                if (connectedUser->getStatus() == networkingConstants::connected) {
+                if (connectedUser != nullptr && connectedUser->getStatus() == networkingConstants::connected) {
                     logOut();
                 }
             break;
@@ -67,7 +69,7 @@ void ClientConnection::closeConnection() {
         logOut();
     }
     closeable = true;
-
+    connectedUser.reset();
 }
 
 void ClientConnection::finishLogin(std::string username) {
@@ -76,7 +78,6 @@ void ClientConnection::finishLogin(std::string username) {
 
 void ClientConnection::logOut() {
     loginManager->logOut(connectedUser->getUsername(), this);
-    connectedUser.reset();
 }
 
 void ClientConnection::setStatus(networkingConstants::UserStatus newStatus) {
@@ -84,7 +85,7 @@ void ClientConnection::setStatus(networkingConstants::UserStatus newStatus) {
 }
 
 void ClientConnection::finishLogOut() {
-    connectedUser = nullptr;
+    connectedUser.reset();
 }
 
 void ClientConnection::startGame(std::shared_ptr<Game>& gamePtr) {
